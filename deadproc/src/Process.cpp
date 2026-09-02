@@ -2,54 +2,215 @@
 
 #include <fstream>
 #include <sstream>
+#include <string>
 
 Process::Process(int pid)
     : pid(pid),
       parentPid(-1),
-      state('?') {
+      state('?'),
+      memoryKB(0),
+      virtualMemoryKB(0),
+      threads(0),
+      userTime(0),
+      systemTime(0),
+      voluntaryContextSwitches(0),
+      nonVoluntaryContextSwitches(0),
+      readBytes(0),
+      writeBytes(0) {
 }
 
 bool Process::load() {
 
-    std::string path =
-        "/proc/" + std::to_string(pid) + "/status";
+    std::string basePath =
+        "/proc/" + std::to_string(pid);
 
-    std::ifstream file(path);
+    std::ifstream statusFile(
+        basePath + "/status"
+    );
 
-    if (!file.is_open()) {
+    if (!statusFile.is_open()) {
         return false;
     }
 
     std::string line;
 
-    while (std::getline(file, line)) {
+    while (std::getline(statusFile, line)) {
 
-        if (line.starts_with("Name:")) {
+        std::stringstream ss(line);
 
-            name = line.substr(5);
+        std::string key;
 
-            size_t first =
-                name.find_first_not_of(" \t");
+        ss >> key;
 
-            if (first != std::string::npos) {
-                name = name.substr(first);
+        if (key == "Name:") {
+
+            ss >> name;
+        }
+
+        else if (key == "State:") {
+
+            ss >> state;
+        }
+
+        else if (key == "PPid:") {
+
+            ss >> parentPid;
+        }
+
+        else if (key == "VmSize:") {
+
+            ss >> virtualMemoryKB;
+        }
+
+        else if (key == "VmRSS:") {
+
+            ss >> memoryKB;
+        }
+
+        else if (key == "Threads:") {
+
+            ss >> threads;
+        }
+
+        else if (key == "Uid:") {
+
+            ss >> uid;
+        }
+
+        else if (key == "voluntary_ctxt_switches:") {
+
+            ss >> voluntaryContextSwitches;
+        }
+
+        else if (key == "nonvoluntary_ctxt_switches:") {
+
+            ss >> nonVoluntaryContextSwitches;
+        }
+    }
+
+    /*
+     * Read /proc/<PID>/cmdline.
+     *
+     * Arguments are separated by '\0', so we
+     * convert them to spaces for display.
+     */
+
+    std::ifstream cmdlineFile(
+        basePath + "/cmdline"
+    );
+
+    if (cmdlineFile.is_open()) {
+
+        std::string argument;
+
+        while (std::getline(
+            cmdlineFile,
+            argument,
+            '\0'
+        )) {
+
+            if (!commandLine.empty()) {
+                commandLine += ' ';
             }
 
-        } else if (line.starts_with("State:")) {
+            commandLine += argument;
+        }
+    }
+
+    /*
+     * Read CPU time from /proc/<PID>/stat.
+     *
+     * Format:
+     *
+     * PID (comm) state ppid ...
+     *
+     * Fields 14 and 15 are:
+     *
+     * utime
+     * stime
+     */
+
+    std::ifstream statFile(
+        basePath + "/stat"
+    );
+
+    if (statFile.is_open()) {
+
+        std::string statLine;
+
+        std::getline(
+            statFile,
+            statLine
+        );
+
+        std::size_t closingParen =
+            statLine.rfind(')');
+
+        if (closingParen !=
+            std::string::npos) {
+
+            std::string fields =
+                statLine.substr(
+                    closingParen + 2
+                );
+
+            std::stringstream ss(fields);
+
+            char statState;
+
+            long ppid;
+            long value;
+
+            // Field 3: state
+            ss >> statState;
+
+            // Field 4: ppid
+            ss >> ppid;
+
+            /*
+             * Skip fields 5 through 13.
+             */
+            for (int i = 0; i < 9; ++i) {
+                ss >> value;
+            }
+
+            // Field 14: utime
+            ss >> userTime;
+
+            // Field 15: stime
+            ss >> systemTime;
+        }
+    }
+
+    /*
+     * Read process I/O statistics.
+     */
+
+    std::ifstream ioFile(
+        basePath + "/io"
+    );
+
+    if (ioFile.is_open()) {
+
+        while (std::getline(ioFile, line)) {
 
             std::stringstream ss(line);
 
-            std::string label;
+            std::string key;
 
-            ss >> label >> state;
+            long value;
 
-        } else if (line.starts_with("PPid:")) {
+            ss >> key >> value;
 
-            std::stringstream ss(line);
+            if (key == "read_bytes:") {
 
-            std::string label;
+                readBytes = value;
+            }
 
-            ss >> label >> parentPid;
+            else if (key == "write_bytes:") {
+
+                writeBytes = value;
+            }
         }
     }
 

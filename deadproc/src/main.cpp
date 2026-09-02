@@ -19,10 +19,6 @@ void handleSignal(int signal) {
     }
 }
 
-// --------------------------------------------------
-// Print human-readable process state
-// --------------------------------------------------
-
 void printState(char state) {
 
     switch (state) {
@@ -105,10 +101,7 @@ std::string formatBytes(long bytes) {
     return output.str();
 }
 
-// --------------------------------------------------
 // Inspect one process
-// --------------------------------------------------
-
 void inspectProcess(int pid) {
 
     Process process(pid);
@@ -319,10 +312,7 @@ void inspectProcess(int pid) {
     std::cout << '\n';
 }
 
-// --------------------------------------------------
 // Scan for zombies
-// --------------------------------------------------
-
 void scanProcesses() {
 
     ProcessScanner scanner;
@@ -400,15 +390,8 @@ void scanProcesses() {
 }
 
 
-// --------------------------------------------------
 // Print process tree recursively
-// --------------------------------------------------
-
-void printTreeNode(
-    const ProcessNode& node,
-    const std::string& prefix,
-    bool isLast,
-    bool isRoot
+void printTreeNode(const ProcessNode& node,const std::string& prefix,bool isLast,bool isRoot
 ) {
 
     const Process& process =
@@ -517,10 +500,7 @@ void printTreeNode(
 }
 
 
-// --------------------------------------------------
 // Display process tree
-// --------------------------------------------------
-
 void printTree(int rootPid) {
 
     ProcessScanner scanner;
@@ -646,10 +626,7 @@ void watchProcesses() {
         << "deadproc: clean shutdown.\n";
 }
 
-// --------------------------------------------------
 // Usage
-// --------------------------------------------------
-
 void printStats() {
 
     ProcessScanner scanner;
@@ -962,9 +939,7 @@ void diagnoseProcess(int pid) {
     std::cout << '\n';
 }
 
-void printUsage(
-    const char* program
-) {
+void printUsage(const char* program){
 
     std::cout
         << "Usage:\n\n"
@@ -1004,11 +979,6 @@ void printUsage(
         << " diagnose <PID>\n"
         << "      Diagnose a process and its ancestry.\n\n";
 }
-
-
-// --------------------------------------------------
-// Main
-// --------------------------------------------------
 
 int main(
     int argc,

@@ -4,7 +4,6 @@
 
 class Process {
 public:
-
     int pid;
     int parentPid;
 

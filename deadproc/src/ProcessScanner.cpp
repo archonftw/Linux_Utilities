@@ -9,10 +9,7 @@
 namespace fs = std::filesystem;
 
 
-// --------------------------------------------------
 // Check whether a directory name is a PID
-// --------------------------------------------------
-
 static bool isPidDirectory(
     const std::string& name
 ) {
@@ -31,10 +28,7 @@ static bool isPidDirectory(
 }
 
 
-// --------------------------------------------------
 // Scan all processes
-// --------------------------------------------------
-
 std::vector<Process>
 ProcessScanner::scan() {
 
@@ -90,10 +84,7 @@ ProcessScanner::scan() {
 }
 
 
-// --------------------------------------------------
 // Find zombies
-// --------------------------------------------------
-
 std::vector<Process>
 ProcessScanner::findZombies() {
 
@@ -219,25 +210,11 @@ ProcessScanner::getParentChain(int pid) {
     return chain;
 }
 
-// --------------------------------------------------
 // Build process tree
-// --------------------------------------------------
-
 std::unique_ptr<ProcessNode>
 ProcessScanner::buildTree(int rootPid) {
-
-    /*
-     * Scan every process first.
-     */
     std::vector<Process> processes =
         scan();
-
-
-    /*
-     * Store processes by PID.
-     *
-     * PID -> Process
-     */
     std::unordered_map<int, Process>
         processesByPid;
 
@@ -250,10 +227,6 @@ ProcessScanner::buildTree(int rootPid) {
         );
     }
 
-
-    /*
-     * Check whether requested PID exists.
-     */
     auto rootIt =
         processesByPid.find(rootPid);
 
@@ -262,21 +235,6 @@ ProcessScanner::buildTree(int rootPid) {
 
         return nullptr;
     }
-
-
-    /*
-     * Parent PID -> child PIDs
-     *
-     * Example:
-     *
-     * children[100] = {200, 300}
-     *
-     * means:
-     *
-     * 100
-     * ├── 200
-     * └── 300
-     */
     std::unordered_map<int, std::vector<int>>
         children;
 
@@ -286,12 +244,6 @@ ProcessScanner::buildTree(int rootPid) {
         children[process.parentPid]
             .push_back(process.pid);
     }
-
-
-    /*
-     * Recursive function that constructs
-     * the actual tree.
-     */
     std::function<std::unique_ptr<ProcessNode>(int)>
         buildNode;
 
@@ -308,20 +260,11 @@ ProcessScanner::buildTree(int rootPid) {
 
                 return nullptr;
             }
-
-
-            /*
-             * Create node for this process.
-             */
             auto node =
                 std::make_unique<ProcessNode>(
                     processIt->second
                 );
 
-
-            /*
-             * Find children.
-             */
             auto childrenIt =
                 children.find(pid);
 
@@ -332,9 +275,6 @@ ProcessScanner::buildTree(int rootPid) {
             }
 
 
-            /*
-             * Recursively build every child.
-             */
             for (int childPid :
                  childrenIt->second) {
 
